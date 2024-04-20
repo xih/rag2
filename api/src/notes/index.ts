@@ -89,7 +89,6 @@ const generateNotes = (
   // 1. format all the documents into a string so that openai can parse it
   const documentsAsString = formatDocumentsAsString(documents);
 
-  console.log("model with tool instantiatd");
   // 2. create a new openAI model
   const model = new ChatOpenAI({
     modelName: "gpt-3.5-turbo-0125",
@@ -100,10 +99,8 @@ const generateNotes = (
     tools: [NOTES_TOOL_SCHEMA],
   });
 
-  console.log("model with tool instantiatd");
   // 4. create a chain by ppiping the prompt with the model with the output parser
   const chain = NOTE_PROMPT.pipe(modelWithTool).pipe(noteOutputParser);
-  console.log("chain created");
   // 5. invoke the chain with the paper
   const response = chain.invoke({
     paper: documentsAsString,
@@ -152,15 +149,22 @@ export const takeNotes = async ({
 
   // 10. create a new supabase client
   // 11. insert into it
-  const client = await SupabaseDatabase.fromDocuments(documents);
-  const data = await client.addPaper({
-    paperUrl: paperUrl,
-    name: name,
-    paper: formatDocumentsAsString(documents),
-    notes: notes,
-  });
+  // 12. do this with a promise.all and generate embeddings by calling database.vectorStore.addDocuments and getting the documents from it
+  //
+  const database = await SupabaseDatabase.fromDocuments(documents);
 
-  console.log(data, "data");
+  await Promise.all([
+    await database.addPaper({
+      paperUrl: paperUrl,
+      name: name,
+      paper: formatDocumentsAsString(documents),
+      notes: notes,
+    }),
+    database.vectorStore.addDocuments(documents),
+  ]);
+
+  // do this
+  return notes;
 };
 
 takeNotes({
