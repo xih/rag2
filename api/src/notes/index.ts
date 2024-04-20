@@ -132,6 +132,8 @@ export const takeNotes = async ({
     pdfBuffer = await deletePages(pdfBuffer, pagesToDelete);
   }
 
+  const documents = await convertPDFtoDocuments(pdfBuffer);
+
   // convert pdf to documents
   // FOLLOWING LINES are for writting to file
   // const documents = await convertPDFtoDocuments(pdfBuffer);
@@ -140,12 +142,21 @@ export const takeNotes = async ({
   // console.log("written to file");
 
   // read in the file
-  const docs = await readFile("pdfs/doc1.json", "utf-8");
-  // console.log(docs, "docs");
-  const documents: Document<Record<string, any>>[] = await JSON.parse(docs);
+  // const docs = await readFile("pdfs/doc1.json", "utf-8");
+  // const documents: Document<Record<string, any>>[] = await JSON.parse(docs);
 
   // convert documents to notes
   const notes = await generateNotes(documents);
+
+  const newDocs: Array<Document> = documents.map((doc) => {
+    return {
+      ...doc,
+      metadata: {
+        ...doc.metadata,
+        url: paperUrl,
+      },
+    };
+  });
 
   // 10. create a new supabase client
   // 11. insert into it
@@ -157,17 +168,17 @@ export const takeNotes = async ({
     await database.addPaper({
       paperUrl: paperUrl,
       name: name,
-      paper: formatDocumentsAsString(documents),
+      paper: formatDocumentsAsString(newDocs),
       notes: notes,
     }),
-    database.vectorStore.addDocuments(documents),
+    database.vectorStore.addDocuments(newDocs),
   ]);
 
   // do this
   return notes;
 };
 
-takeNotes({
-  paperUrl: "https://arxiv.org/pdf/2404.01230.pdf",
-  name: "test",
-});
+// takeNotes({
+//   paperUrl: "https://arxiv.org/pdf/2404.01230.pdf",
+//   name: "test2",
+// });

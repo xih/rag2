@@ -1,6 +1,7 @@
 // create an express server
 import express from "express";
 import { takeNotes } from "notes/index.js";
+import { qaOnPaper } from "qa/index.js";
 
 function main() {
   const app = express();
@@ -23,6 +24,15 @@ function main() {
     });
 
     res.status(200).send(notes);
+    return;
+  });
+
+  app.post("/qa", async (req, res) => {
+    const { question, paperUrl } = req.body;
+
+    const answerAndQuestions = await qaOnPaper(question, paperUrl);
+
+    res.status(200).send(answerAndQuestions);
     return;
   });
 

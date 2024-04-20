@@ -37,6 +37,29 @@ export class SupabaseDatabase {
     this.vectorStore = vectorStore;
   }
 
+  static async fromExistingIndex() {
+    // create a new Supabase instance, but since we have existing indexes already
+    // we can create it from scratch
+
+    const privateKey = process.env.SUPABASE_PRIVATE_KEY;
+    const projectUrl = process.env.SUPABASE_URL;
+
+    if (!privateKey || !projectUrl) {
+      throw new Error("missing SUPABASE_PRIVATE_KEY or SUPABASE_URL");
+    }
+
+    const client = createClient<Database>(projectUrl, privateKey);
+
+    const vectorStore = await SupabaseVectorStore.fromExistingIndex(
+      new OpenAIEmbeddings(),
+      {
+        client: client,
+        tableName: ARXIV_EMBEDDINGS_TABLE,
+        queryName: "match_documents",
+      }
+    );
+    return new this(client, vectorStore);
+  }
   static async fromDocuments(documents: Document[]) {
     // pass in an array of documents and generate embeddings from this
     // first, make sure we have the private key and supabase URL
@@ -94,5 +117,22 @@ export class SupabaseDatabase {
     }
 
     return data;
+  }
+
+  // this takes a URL and returns the paper
+  async getPaper(
+    url: string
+  ): Promise<Database["public"]["Tables"]["arxiv_papers"]["Row"]> {
+    const { data, error } = await this.client
+      .from(ARXIV_PAPERS_TABLE)
+      .select()
+      .eq("arxiv_url", url);
+
+    if (error || !data) {
+      console.error("error getting paper from database");
+      throw error;
+    }
+
+    return data[0];
   }
 }
