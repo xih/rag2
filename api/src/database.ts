@@ -135,4 +135,26 @@ export class SupabaseDatabase {
 
     return data[0];
   }
+
+  // 20. make a method that saves the QA the database so we don't have to search it everytime
+  async saveQa(
+    answer: string,
+    question: string,
+    context: string,
+    followUpQuestions: string[]
+  ) {
+    const { error } = await this.client.from(ARXIV_QUESTION_ANSWERING).insert({
+      answer,
+      question,
+      followup_questions: followUpQuestions,
+      context,
+    });
+
+    if (error) {
+      console.error("error inserting questions into the database");
+      throw error;
+    }
+
+    return;
+  }
 }

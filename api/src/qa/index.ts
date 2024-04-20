@@ -11,6 +11,7 @@ import {
 } from "./prompts.js";
 import { SupabaseDatabase } from "database.js";
 import { ArxivPaperNote } from "notes/prompts.js";
+import { formatDocumentsAsString } from "langchain/util/document";
 
 // only 2 functions
 // 1. qaModel
@@ -71,6 +72,18 @@ export const qaOnPaper = async (question: string, paperUrl: string) => {
     documents,
     question,
     notes as unknown as Array<ArxivPaperNote>
+  );
+
+  // save the QA to the database
+  await Promise.all(
+    answerAndQuestions.map(async (qa) =>
+      database.saveQa(
+        qa.answer,
+        question,
+        formatDocumentsAsString(documents),
+        qa.followupQuestions
+      )
+    )
   );
 
   return answerAndQuestions;
