@@ -47,6 +47,11 @@ const submitPaperFormSchema = z.object({
   pagesToDelete: z.string().optional(),
 });
 
+const submitPaperFormSchema2 = z.object({
+  paperUrl: z.string().min(1, { message: "paper required" }),
+  name: z.string().min(1),
+});
+
 const questionFormSchema = z.object({
   question: z.string(),
 });
@@ -72,7 +77,7 @@ export default function Home() {
   const [answers, setAnswers] = useState<Array<QAResponse> | undefined>();
 
   const submitPaperForm = useForm({
-    resolver: zodResolver(submitPaperFormSchema),
+    resolver: zodResolver(submitPaperFormSchema2),
     defaultValues: {
       name: "Gorilla: Large Language Model Connected with Massive APIs",
       paperUrl: "https://arxiv.org/pdf/2305.15334.pdf",
