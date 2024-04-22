@@ -11,6 +11,10 @@
 // 24. add a component for actually logging questions and answers, and follow up questions
 // 25. add a button to easily click on a followup question and have that be sent to our API
 
+// 26. add a new form to the second side of the page
+// 27. delete the fields we don't need
+// 28. copy the formSchema
+
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -40,6 +44,10 @@ const submitPaperFormSchema = z.object({
   pagesToDelete: z.string().optional(),
 });
 
+const questionFormSchema = z.object({
+  question: z.string(),
+});
+
 type SubmitPaperData = {
   paperUrl: string;
   name: string;
@@ -57,6 +65,7 @@ export default function Home() {
   >();
 
   const [notes, setNotes] = useState<Array<ArxivPaperNote> | undefined>();
+  const [question, setQuestion] = useState<string>();
 
   const submitPaperForm = useForm<z.infer<typeof submitPaperFormSchema>>({
     resolver: zodResolver(submitPaperFormSchema),
@@ -65,6 +74,9 @@ export default function Home() {
       paperUrl: "https://arxiv.org/pdf/2305.15334.pdf",
       pagesToDelete: "10, 11, 12",
     },
+  });
+  const questionForm = useForm<z.infer<typeof questionFormSchema>>({
+    resolver: zodResolver(questionFormSchema),
   });
 
   async function onPaperSubmit(values: z.infer<typeof submitPaperFormSchema>) {
@@ -94,16 +106,35 @@ export default function Home() {
     } else {
       throw new Error("something went wrong taking notes");
     }
-
-    //
   }
-  // const submitPaperForm = useForm<SubmitPaperFormValues>({
-  //   resolver: zodResolver(submitPaperFormSchema),
-  // });
+
+  async function onQuestionSubmit(values: z.infer<typeof questionFormSchema>) {
+    // Do something with the form values.
+    // ✅ This will be type-safe and validated.
+    console.log(values);
+    // setQuestion(values.question);
+
+    // const response = await fetch("/api/qa", {
+    //   method: "post",
+    //   body: JSON.stringify(values),
+    // }).then((res) => {
+    //   if (res.ok) {
+    //     return res.json();
+    //   }
+    //   return null;
+    // });
+
+    // if (response) {
+    //   console.log(response);
+    //   setNotes(response);
+    // } else {
+    //   throw new Error("something went wrong taking notes");
+    // }
+  }
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-row gap-5">
+      <div className="flex flex-row gap-5 mx-auto mt-8">
         {/* add paper  */}
         <div className="flex flex-col gap-2 border-[1px] border-gray-400 rounded-md p-2">
           <Form {...submitPaperForm}>
@@ -183,7 +214,33 @@ export default function Home() {
         </div>
 
         {/* qa on paper */}
-        <div></div>
+        <div className="flex flex-col gap-2 border-[1px] border-gray-400 rounded-md p-2">
+          <Form {...submitPaperForm}>
+            <form
+              onSubmit={questionForm.handleSubmit(onQuestionSubmit)}
+              className="space-y-8"
+            >
+              <FormField
+                control={questionForm.control}
+                name="question"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Question</FormLabel>
+                    <FormControl>
+                      <Input placeholder="why is the sky blue?" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      The question to ask about the paper
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button type="submit">Submit</Button>
+            </form>
+          </Form>
+        </div>
       </div>
       {/* write a section to displaying your notes! */}
       {notes && notes.length > 0 && (
