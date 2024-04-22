@@ -44,7 +44,6 @@ export const noteOutputParser = (
   output: BaseMessageChunk
 ): Array<ArxivPaperNote> => {
   // get tool calls from the output.additiona_kwargs/ tool calls
-  console.log("does it go here");
   const toolCalls = output.additional_kwargs.tool_calls;
   if (!toolCalls) {
     throw new Error("missing toolcalls");

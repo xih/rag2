@@ -3,6 +3,11 @@ import express from "express";
 import { takeNotes } from "notes/index.js";
 import { qaOnPaper } from "qa/index.js";
 
+const processPagesToDelete = (pagesToDelete: string): number[] => {
+  return pagesToDelete.split(",").map(Number);
+  // return pagesToDelete.split(",").map(num => parseInt(num.trim()))
+};
+
 function main() {
   const app = express();
   const port = process.env.port || 8000;
@@ -17,10 +22,15 @@ function main() {
   app.post("/take_notes", async (req, res) => {
     const { paperUrl, name, pagesToDelete } = req.body;
 
+    // convert pagesToDelete back to array of numbers
+    const pagesToDeleteNum = pagesToDelete
+      ? processPagesToDelete(pagesToDelete)
+      : undefined;
+
     const notes = await takeNotes({
       paperUrl,
       name,
-      pagesToDelete,
+      pagesToDelete: pagesToDeleteNum,
     });
 
     res.status(200).send(notes);
