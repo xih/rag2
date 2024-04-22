@@ -14,6 +14,8 @@
 // 26. add a new form to the second side of the page
 // 27. delete the fields we don't need
 // 28. copy the formSchema
+// 29. connect the form schema with our API
+// 30. server API requires QA since we require paperURL as well for our server endpoint
 
 import { Button } from "@/components/ui/button";
 import {
@@ -37,6 +39,7 @@ import { z } from "zod";
 import { ChevronsUpDown, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { ArxivPaperNote } from "./api/take_notes";
+import { QAResponse } from "./api/qa";
 
 const submitPaperFormSchema = z.object({
   paperUrl: z.string(),
@@ -66,6 +69,7 @@ export default function Home() {
 
   const [notes, setNotes] = useState<Array<ArxivPaperNote> | undefined>();
   const [question, setQuestion] = useState<string>();
+  const [answers, setAnswers] = useState<Array<QAResponse> | undefined>();
 
   const submitPaperForm = useForm<z.infer<typeof submitPaperFormSchema>>({
     resolver: zodResolver(submitPaperFormSchema),
@@ -109,28 +113,34 @@ export default function Home() {
   }
 
   async function onQuestionSubmit(values: z.infer<typeof questionFormSchema>) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
-    console.log(values);
-    // setQuestion(values.question);
+    if (!submittedPaperData) {
+      throw new Error("no paper submitted");
+    }
 
-    // const response = await fetch("/api/qa", {
-    //   method: "post",
-    //   body: JSON.stringify(values),
-    // }).then((res) => {
-    //   if (res.ok) {
-    //     return res.json();
-    //   }
-    //   return null;
-    // });
+    const data = {
+      ...values,
+      paperUrl: submittedPaperData.paperUrl,
+    };
 
-    // if (response) {
-    //   console.log(response);
-    //   setNotes(response);
-    // } else {
-    //   throw new Error("something went wrong taking notes");
-    // }
+    const response = await fetch("/api/qa", {
+      method: "post",
+      body: JSON.stringify(data),
+    }).then((res) => {
+      if (res.ok) {
+        return res.json();
+      }
+      return null;
+    });
+
+    if (response) {
+      console.log(response);
+      setAnswers(response);
+    } else {
+      throw new Error("something went wrong taking notes");
+    }
   }
+
+  console.log("1. what is notes", notes);
 
   return (
     <div className="flex flex-col gap-5">
@@ -242,25 +252,47 @@ export default function Home() {
           </Form>
         </div>
       </div>
-      {/* write a section to displaying your notes! */}
-      {notes && notes.length > 0 && (
-        <div className="flex flex-col gap-2 max-w-[600px]">
-          <h2>Notes</h2>
-          <div className="flex flex-col gap-2">
-            {notes.map((note, index) => (
-              <div key={index} className="flex flex-col gap-1  p-3">
-                <p className="">
-                  {index + 1}. {note.note}
-                </p>
-                <p className="text-sm text-gray-600">
-                  {/* these are wrong. fix in a part 2 */}[
-                  {note.pageNumbers.join(",")}]
-                </p>
-              </div>
-            ))}
+      <div className="flex flex-row gap-5 mx-auto mt-3">
+        {notes && notes.length > 0 && (
+          <div className="flex flex-col gap-2 max-w-[600px]">
+            <h2>Notes</h2>
+            <div className="flex flex-col gap-2">
+              {notes.map((note, index) => (
+                <div className="flex flex-col gap-2 p-2" key={index}>
+                  <p>
+                    {index + 1}. {note.note}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    [{note.pageNumbers.join(", ")}]
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+        {answers && answers.length > 0 && (
+          <div className="flex flex-col gap-2 max-w-[600px]">
+            <h2>Answers</h2>
+            <div className="flex flex-col gap-2">
+              {answers.map((answer, index) => (
+                <div key={index} className="flex flex-col gap-1  p-3">
+                  <p className="">
+                    {index + 1}. {answer.answer}
+                  </p>
+                  <p>follow up questions</p>
+                  <div className="flex flex-col gap-2 p-2">
+                    {answer.followupQuestions.map((followupQuestion, index) => (
+                      <p key={index} className="text-sm text-gray-600">
+                        {followupQuestion}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

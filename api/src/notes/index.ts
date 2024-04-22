@@ -117,7 +117,14 @@ export const takeNotes = async ({
   paperUrl: string;
   name: string;
   pagesToDelete?: number[];
-}) => {
+}): Promise<ArxivPaperNote[]> => {
+  const database = await SupabaseDatabase.fromExistingIndex();
+  const existingPaper = await database.getPaper(paperUrl);
+
+  if (existingPaper) {
+    return existingPaper.notes as Array<ArxivPaperNote>;
+  }
+
   const pdf = "";
   // first check that the paperURL is valid
   if (!paperUrl.endsWith("pdf")) {
@@ -162,7 +169,6 @@ export const takeNotes = async ({
   // 11. insert into it
   // 12. do this with a promise.all and generate embeddings by calling database.vectorStore.addDocuments and getting the documents from it
   //
-  const database = await SupabaseDatabase.fromDocuments(documents);
 
   await Promise.all([
     await database.addPaper({
