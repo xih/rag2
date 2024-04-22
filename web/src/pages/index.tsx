@@ -42,8 +42,8 @@ import { ArxivPaperNote } from "./api/take_notes";
 import { QAResponse } from "./api/qa";
 
 const submitPaperFormSchema = z.object({
-  paperUrl: z.string(),
-  name: z.string(),
+  paperUrl: z.string().min(1),
+  name: z.string().min(1),
   pagesToDelete: z.string().optional(),
 });
 
@@ -68,10 +68,10 @@ export default function Home() {
   >();
 
   const [notes, setNotes] = useState<Array<ArxivPaperNote> | undefined>();
-  const [question, setQuestion] = useState<string>();
+  // const [question, setQuestion] = useState<string>();
   const [answers, setAnswers] = useState<Array<QAResponse> | undefined>();
 
-  const submitPaperForm = useForm<z.infer<typeof submitPaperFormSchema>>({
+  const submitPaperForm = useForm({
     resolver: zodResolver(submitPaperFormSchema),
     defaultValues: {
       name: "Gorilla: Large Language Model Connected with Massive APIs",
